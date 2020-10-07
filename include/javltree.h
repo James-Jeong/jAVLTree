@@ -74,7 +74,7 @@ void* JNodeSetKey(JNodePtr node, void *key);
 // Functions for JAVLTree
 ///////////////////////////////////////////////////////////////////////////////
 
-JAVLTreePtr NewJAVLTree(int index);
+JAVLTreePtr NewJAVLTree(KeyType type);
 DeleteResult DeleteJAVLTree(JAVLTreePtrContainer container);
 
 void* JAVLTreeGetData(const JAVLTreePtr tree);
