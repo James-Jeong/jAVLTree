@@ -1,5 +1,5 @@
-#ifndef __JHASHTABLE_H__
-#define __JHASHTABLE_H__
+#ifndef __JAVLTREE_H__
+#define __JAVLTREE_H__
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Enums
