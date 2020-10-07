@@ -22,6 +22,7 @@ static void _PreorderTraverse(JNodePtr node, KeyType type);
 static void _InorderTraverse(JNodePtr node, KeyType type);
 static void _PostorderTraverse(JNodePtr node, KeyType type);
 static void _PrintKey(JNodePtr node, KeyType type);
+static int _GetCompareLength(const char *s1, const char *s2);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Functions for JNode
@@ -203,16 +204,28 @@ JAVLTreePtr JAVLTreeAddNode(JAVLTreePtr tree, void *key)
 				else parentNode->right = newNode;
 				break;
 			case StringType:
-				if((char*)(parentNode->key) > (char*)(key)) parentNode->left = newNode;
+				if(strncmp((char*)(parentNode->key), (char*)(key), _GetCompareLength((char*)(parentNode->key), (char*)(key))) < 0) parentNode->left = newNode;
 				else parentNode->right = newNode;
 				break;
 			default:
+				DeleteJNode(&newNode);
 				return NULL;
 		}
 	}
 	else tree->root = newNode;
 
-	if(JAVLTreeRebalance(tree) == NULL) return NULL;
+	if(JAVLTreeRebalance(tree) == NULL)
+	{
+		if(parentNode != NULL)
+		{
+			if(parentNode->left == newNode) parentNode->left = NULL;
+			else parentNode->right = NULL;
+		}
+		else tree->root = NULL;
+		DeleteJNode(&newNode);
+		return NULL;
+	}
+
 	return tree;
 }
 
@@ -243,7 +256,11 @@ DeleteResult JAVLTreeDeleteNodeKey(JAVLTreePtr tree, void *key)
 		currentNode = JAVLTreeMoveNode(currentNode, key, tree->type);
 	}
 
-	if(currentNode == NULL) return DeleteFail;
+	if(currentNode == NULL)
+	{
+		DeleteJNode(&dummyNode);
+		return DeleteFail;
+	}
 	selectedNode = currentNode;
 
 	// 자식 노드가 없는 경우(최하위 노드)
@@ -454,9 +471,11 @@ static JNodePtr JAVLTreeMoveNode(JNodePtr node, void *key, KeyType type)
 			else node = node->right;
 			break;
 		case StringType:
-			if(strncmp((char*)(node->key), (char*)(key), strlen((char*)(node->key))) < 0) node = node->left;
+		{
+			if(strncmp((char*)(node->key), (char*)(key), _GetCompareLength((char*)(node->key), (char*)(key))) < 0) node = node->left;
 			else node = node->right;
 			break;
+		}
 		default: return NULL;
 	}
 	return node;
@@ -501,5 +520,12 @@ static void _PrintKey(JNodePtr node, KeyType type)
 			break;
 		default: return;
 	}
+}
+
+static int _GetCompareLength(const char *s1, const char *s2)
+{
+	int s1Length = strlen(s1);
+	int s2Length = strlen(s2);
+	return s1Length > s2Length ? s1Length : s2Length;
 }
 
