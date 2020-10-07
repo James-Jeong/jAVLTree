@@ -17,7 +17,11 @@ static JAVLTreePtr JAVLTreeRebalance(JAVLTreePtr tree);
 static int JAVLTreeGetHeight(JNodePtr node);
 static int JAVLTreeGetHeightDiff(JNodePtr node);
 static void JAVLTreeDeleteNodes(JNodePtr node);
-static FindResult JAVLTreeMoveNode(JNodePtrContainer nodeContainer, void *key, KeyType type);
+static JNodePtr JAVLTreeMoveNode(JNodePtr node, void *key, KeyType type);
+static void _PreorderTraverse(JNodePtr node, KeyType type);
+static void _InorderTraverse(JNodePtr node, KeyType type);
+static void _PostorderTraverse(JNodePtr node, KeyType type);
+static void _PrintKey(JNodePtr node, KeyType type);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Functions for JNode
@@ -104,13 +108,8 @@ JAVLTreePtr NewJAVLTree(KeyType type)
 		return NULL;
 	}
 
-	newTree->root = NewJNode();
-	if(newTree->root == NULL)
-	{
-		free(newTree);
-		return NULL;
-	}
-
+	newTree->type = type;
+	newTree->root = NULL;
 	newTree->data = NULL;
 
 	return newTree;
@@ -185,7 +184,7 @@ JAVLTreePtr JAVLTreeAddNode(JAVLTreePtr tree, void *key)
 		if(key == currentNode->key) return NULL;
 
 		parentNode = currentNode;
-		if(JAVLTreeMoveNode(&currentNode, key, tree->type) == FindFail) return NULL;
+		currentNode = JAVLTreeMoveNode(currentNode, key, tree->type);
 	}
 
 	JNodePtr newNode = NewJNode();
@@ -228,9 +227,12 @@ DeleteResult JAVLTreeDeleteNodeKey(JAVLTreePtr tree, void *key)
 {
 	if(tree == NULL || key == NULL) return DeleteFail;
 
-	DeleteResult result = DeleteFail;
+	DeleteResult result = DeleteSuccess;
 
 	JNodePtr dummyNode = NewJNode();
+	if(dummyNode == NULL) return DeleteFail;
+	dummyNode->right = tree->root;
+
 	JNodePtr parentNode = dummyNode;
 	JNodePtr currentNode = tree->root;
 	JNodePtr selectedNode = NULL;
@@ -238,21 +240,23 @@ DeleteResult JAVLTreeDeleteNodeKey(JAVLTreePtr tree, void *key)
 	while((currentNode != NULL) && (key != currentNode->key))
 	{
 		parentNode = currentNode;
-		if(JAVLTreeMoveNode(&currentNode, key, tree->type) == FindFail) return DeleteFail;
+		currentNode = JAVLTreeMoveNode(currentNode, key, tree->type);
 	}
 
 	if(currentNode == NULL) return DeleteFail;
 	selectedNode = currentNode;
 
+	// 자식 노드가 없는 경우(최하위 노드)
 	if((selectedNode->left == NULL) && (selectedNode->right == NULL))
 	{
-		if(parentNode->left == selectedNode) parentNode->left = NULL;
+		if(parentNode->left == currentNode) parentNode->left = NULL;
 		else parentNode->right = NULL;
 	}
+	// 자식 노드가 하나밖에 없는 경우
 	else if((selectedNode->left == NULL) || (selectedNode->right == NULL))
 	{
 		// child node of selected node
-		JNodePtr scNode;
+		JNodePtr scNode = NULL;
 
 		if(selectedNode->left != NULL) scNode = selectedNode->left;
 		else scNode = selectedNode->right;
@@ -260,9 +264,12 @@ DeleteResult JAVLTreeDeleteNodeKey(JAVLTreePtr tree, void *key)
 		if(parentNode->left == selectedNode) parentNode->left = scNode;
 		else parentNode->right = scNode;
 	}
-	else
+	// 자식 노드가 두 개 다 있는 경우
+	else if((selectedNode->left != NULL) && (selectedNode->right != NULL))
 	{
+		// child node of selected node
 		JNodePtr scNode = selectedNode->right;
+		// parent node of child node of selected node
 		JNodePtr spNode = selectedNode;
 
 		while(scNode->left != NULL)
@@ -270,18 +277,45 @@ DeleteResult JAVLTreeDeleteNodeKey(JAVLTreePtr tree, void *key)
 			spNode = scNode;
 			scNode = scNode->left;
 		}
-		
+
+		void *tempKey = scNode->key;
+
 		if(spNode->left == scNode) spNode->left = scNode->right;
 		else spNode->right = scNode->right;
 
+		JNodeSetKey(selectedNode, tempKey);
 		selectedNode = scNode;
 	}
 
+	// 루트 노드 삭제 시 변경된 다른 노드로 바꾼다.
 	if(dummyNode->right != tree->root) tree->root = dummyNode->right;
 
-	free(selectedNode);
+	DeleteJNode(&selectedNode);
 	DeleteJNode(&dummyNode);
+
+	if(JAVLTreeRebalance(tree) == NULL) result = DeleteFail;
 	return result;
+}
+
+void JAVLTreePreorderTraverse(const JAVLTreePtr tree)
+{
+	if(tree == NULL) return;
+	_PreorderTraverse(tree->root, tree->type);
+	printf("\n");
+}
+
+void JAVLTreeInorderTraverse(const JAVLTreePtr tree)
+{
+	if(tree == NULL) return;
+	_InorderTraverse(tree->root, tree->type);
+	printf("\n");
+}
+
+void JAVLTreePostorderTraverse(const JAVLTreePtr tree)
+{
+	if(tree == NULL) return;
+	_PostorderTraverse(tree->root, tree->type);
+	printf("\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -407,9 +441,8 @@ static void JAVLTreeDeleteNodes(JNodePtr node)
 	}
 }
 
-static FindResult JAVLTreeMoveNode(JNodePtrContainer nodeContainer, void *key, KeyType type)
+static JNodePtr JAVLTreeMoveNode(JNodePtr node, void *key, KeyType type)
 {
-	JNodePtr node = *nodeContainer;
 	switch(type)
 	{
 		case IntType:
@@ -421,12 +454,52 @@ static FindResult JAVLTreeMoveNode(JNodePtrContainer nodeContainer, void *key, K
 			else node = node->right;
 			break;
 		case StringType:
-			if((char*)(node->key) > (char*)(key)) node = node->left;
+			if(strncmp((char*)(node->key), (char*)(key), strlen((char*)(node->key))) < 0) node = node->left;
 			else node = node->right;
 			break;
-		default:
-			FindFail;
+		default: return NULL;
 	}
-	return FindSuccess;
+	return node;
+}
+
+static void _PreorderTraverse(JNodePtr node, KeyType type)
+{
+	if(node == NULL) return;
+	_PrintKey(node, type);
+	_PreorderTraverse(node->left, type);
+	_PreorderTraverse(node->right, type);
+}
+
+static void _InorderTraverse(JNodePtr node, KeyType type)
+{
+	if(node == NULL) return;
+	_InorderTraverse(node->left, type);
+	_PrintKey(node, type);
+	_InorderTraverse(node->right, type);
+}
+
+static void _PostorderTraverse(JNodePtr node, KeyType type)
+{
+	if(node == NULL) return;
+	_PostorderTraverse(node->left, type);
+	_PostorderTraverse(node->right, type);
+	_PrintKey(node, type);
+}
+
+static void _PrintKey(JNodePtr node, KeyType type)
+{
+	switch(type)
+	{
+		case IntType:
+			printf("%d ", *((int*)(node->key)));
+			break;
+		case CharType:
+			printf("%c ", *((char*)(node->key)));
+			break;
+		case StringType:
+			printf("%s ", (char*)(node->key));
+			break;
+		default: return;
+	}
 }
 

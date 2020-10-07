@@ -77,12 +77,15 @@ void* JNodeSetKey(JNodePtr node, void *key);
 JAVLTreePtr NewJAVLTree(int index);
 DeleteResult DeleteJAVLTree(JAVLTreePtrContainer container);
 
-void* JAVLTreeGetKey(const JAVLTreePtr tree);
-void* JAVLTreeSetKey(JAVLTreePtr tree, void *data);
+void* JAVLTreeGetData(const JAVLTreePtr tree);
+void* JAVLTreeSetData(JAVLTreePtr tree, void *data);
 
 JAVLTreePtr JAVLTreeAddNode(JAVLTreePtr tree, void *data);
 DeleteResult JAVLTreeDeleteNodeKey(JAVLTreePtr tree, void *key);
 
+void JAVLTreePreorderTraverse(const JAVLTreePtr tree);
+void JAVLTreeInorderTraverse(const JAVLTreePtr tree);
+void JAVLTreePostorderTraverse(const JAVLTreePtr tree);
 
 #endif
 

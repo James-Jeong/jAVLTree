@@ -74,17 +74,27 @@ TEST(Node_INT, GetKey, {
 
 TEST(AVLTree_INT, AddNode, {
 	JAVLTreePtr tree = NewJAVLTree(IntType);
-	int expected = 5;
+	int expected1 = 1;
+	int expected2 = 2;
+	int expected3 = 3;
+	int expected4 = 4;
+	int expected5 = 5;
 
 	// 정상 동작 확인
-	EXPECT_NOT_NULL(JAVLTreeAddNode(tree, &expected));
-	EXPECT_NUM_EQUAL(*((int*)(tree->root->key)), expected);
+	EXPECT_NOT_NULL(JAVLTreeAddNode(tree, &expected1));
+	EXPECT_NOT_NULL(JAVLTreeAddNode(tree, &expected2));
+	EXPECT_NOT_NULL(JAVLTreeAddNode(tree, &expected3));
+	EXPECT_NOT_NULL(JAVLTreeAddNode(tree, &expected4));
+	EXPECT_NOT_NULL(JAVLTreeAddNode(tree, &expected5));
+	EXPECT_NUM_EQUAL(*((int*)(tree->root->key)), expected3);
+	
+	JAVLTreeInorderTraverse(tree);
 
 	// 중복 허용 테스트
-	EXPECT_NULL(JAVLTreeAddNode(tree, &expected));
+	EXPECT_NULL(JAVLTreeAddNode(tree, &expected1));
 
 	// NULL 이 입력값이면, NULL 을 반환
-	EXPECT_NULL(JAVLTreeAddNode(NULL, &expected));
+	EXPECT_NULL(JAVLTreeAddNode(NULL, &expected1));
 	EXPECT_NULL(JAVLTreeAddNode(tree, NULL));
 	EXPECT_NULL(JAVLTreeAddNode(NULL, NULL));
 
@@ -120,11 +130,28 @@ TEST(AVLTree_INT, GetData, {
 
 TEST(AVLTree_INT, DeleteNodeKey, {
 	JAVLTreePtr tree = NewJAVLTree(IntType);
-	int expected1 = 5;
+	int expected1 = 1;
+	int expected2 = 2;
+	int expected3 = 3;
+	int expected4 = 4;
+	int expected5 = 5;
 
-	JAVLTreeAddNode(tree, &expected1);
+	// 정상 동작 확인
+	EXPECT_NOT_NULL(JAVLTreeAddNode(tree, &expected1));
+	EXPECT_NOT_NULL(JAVLTreeAddNode(tree, &expected2));
+	EXPECT_NOT_NULL(JAVLTreeAddNode(tree, &expected3));
+	EXPECT_NOT_NULL(JAVLTreeAddNode(tree, &expected4));
+
+	JAVLTreeInorderTraverse(tree);
+
 	EXPECT_NUM_EQUAL(JAVLTreeDeleteNodeKey(tree, &expected1), DeleteSuccess);
+	JAVLTreeInorderTraverse(tree);
+	EXPECT_NUM_EQUAL(JAVLTreeDeleteNodeKey(tree, &expected3), DeleteSuccess);
+	JAVLTreeInorderTraverse(tree);
+	EXPECT_NUM_EQUAL(JAVLTreeDeleteNodeKey(tree, &expected4), DeleteSuccess);
+	JAVLTreeInorderTraverse(tree);
 
+	EXPECT_NUM_EQUAL(JAVLTreeDeleteNodeKey(tree, &expected5), DeleteFail);
 	EXPECT_NUM_EQUAL(JAVLTreeDeleteNodeKey(NULL, &expected1), DeleteFail);
 	EXPECT_NUM_EQUAL(JAVLTreeDeleteNodeKey(tree, NULL), DeleteFail);
 	EXPECT_NUM_EQUAL(JAVLTreeDeleteNodeKey(NULL, NULL), DeleteFail);
@@ -247,10 +274,10 @@ int main()
 		Test_Node_INT_SetKey,
 		Test_Node_INT_GetKey,
 		Test_AVLTree_INT_AddNode,
-/*		Test_AVLTree_INT_SetData,
+		Test_AVLTree_INT_SetData,
 		Test_AVLTree_INT_GetData,
-		Test_AVLTree_INT_DeleteNodeKey,
-*/
+		Test_AVLTree_INT_DeleteNodeKey
+
 		// @ CHAR Test -------------------------------------------
 //		Test_Node_CHAR_SetKey,
 //		Test_Node_CHAR_GetKey,
@@ -261,7 +288,7 @@ int main()
 */
 		// @ STRING Test -------------------------------------------
 //		Test_Node_STRING_SetKey,
-//		Test_Node_STRING_GetKey
+//		Test_Node_STRING_GetKey,
 /*		Test_AVLTree_STRING_AddNode,
 		Test_AVLTree_STRING_SetData,
 		Test_AVLTree_STRING_GetData,
