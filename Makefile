@@ -6,6 +6,6 @@ $(TARGET): $(JAVLTREE_OBJS)
 	$(AR) $@ $^
 
 clean:
-	$(RM) $(jAVLTREE_OBJS)
+	$(RM) $(JAVLTREE_OBJS)
 	$(RM) $(TARGET)
 
